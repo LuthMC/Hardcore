@@ -1,0 +1,6 @@
+name: Hardcore
+main: Luthfi\Hardcore\Main
+version: 1.0.0
+api: 5.0.0
+author: Luthfi
+description: Simple Hardcore Plugins.
