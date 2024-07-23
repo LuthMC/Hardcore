@@ -1,0 +1,6 @@
+# Hardcore Configuration
+# Github: https://github.com/LuthMC
+
+ban_minutes: 5
+ban_message: "&cYou have been banned for dying! Please wait {minutes} minutes."
+hearts: 1
