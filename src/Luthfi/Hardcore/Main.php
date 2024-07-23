@@ -6,10 +6,12 @@ use pocketmine\plugin\PluginBase;
 use pocketmine\event\Listener;
 use pocketmine\event\player\PlayerJoinEvent;
 use pocketmine\event\player\PlayerDeathEvent;
-use pocketmine\Player;
+use pocketmine\player\Player;
 use pocketmine\utils\Config;
 use pocketmine\utils\TextFormat;
 use pocketmine\Server;
+use pocketmine\scheduler\Task;
+use pocketmine\lang\TranslationContainer;
 
 class Main extends PluginBase implements Listener {
 
@@ -38,18 +40,25 @@ class Main extends PluginBase implements Listener {
         $player = $event->getPlayer();
         $banMinutes = $this->config->get("ban_minutes", 5);
         $banMessage = str_replace("{minutes}", $banMinutes, $this->config->get("ban_message", "You have been banned for dying!"));
-        
-        $player->setBanned(true, TextFormat::colorize($banMessage));
+
+        $banList = $this->getServer()->getNameBans();
+        $banEntry = new \pocketmine\ban\BanEntry($player->getName());
+        $banEntry->setReason(TextFormat::colorize($banMessage));
+        $banEntry->setExpires(new \DateTime("@" . (time() + 60 * $banMinutes)));
+        $banList->addBan($banEntry);
+
+        $player->kick(new TranslationContainer("multiplayer.disconnect.banned", [$banMessage]), false);
+
         $this->getScheduler()->scheduleDelayedTask(new UnbanTask($this, $player->getName()), 20 * 60 * $banMinutes);
     }
 
     public function unbanPlayer(string $playerName): void {
-        $player = Server::getInstance()->getOfflinePlayer($playerName);
-        $player->setBanned(false);
+        $banList = $this->getServer()->getNameBans();
+        $banList->remove($playerName);
     }
 }
 
-class UnbanTask extends \pocketmine\scheduler\Task {
+class UnbanTask extends Task {
     private $plugin;
     private $playerName;
 
@@ -58,7 +67,7 @@ class UnbanTask extends \pocketmine\scheduler\Task {
         $this->playerName = $playerName;
     }
 
-    public function onRun(int $currentTick): void {
+    public function onRun(): void {
         $this->plugin->unbanPlayer($this->playerName);
     }
 }
